@@ -5,7 +5,7 @@
 
 using namespace bsio;
 
-std::atomic< int64_t> count = 0;
+std::atomic< int64_t> count = ATOMIC_VAR_INIT(0);
 
 int main(int argc, char** argv)
 {

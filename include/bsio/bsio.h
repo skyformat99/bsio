@@ -7,7 +7,7 @@
 #include <deque>
 
 #include <asio.hpp>
-#include <brynet/utils/buffer.h>
+#include <brynet/base/Buffer.hpp>
 
 namespace bsio {
 
@@ -433,8 +433,8 @@ namespace bsio {
         {
             auto self = shared_from_this();
             mSocket->socket().async_read_some(
-                asio::buffer(ox_buffer_getwriteptr(mRecvBuffer.get()),
-                    ox_buffer_getwritevalidcount(mRecvBuffer.get())),
+                asio::buffer(brynet::base::buffer_getwriteptr(mRecvBuffer.get()),
+                    brynet::base::buffer_getwritevalidcount(mRecvBuffer.get())),
                 [this, self](std::error_code ec, size_t bytesTransferred) {
                     onRecvCompleted(ec, bytesTransferred);
                 });
@@ -447,20 +447,20 @@ namespace bsio {
                 return;
             }
 
-            ox_buffer_addwritepos(mRecvBuffer.get(), bytesTransferred);
-            if (ox_buffer_getreadvalidcount(mRecvBuffer.get()) == ox_buffer_getsize(mRecvBuffer.get()))
+            brynet::base::buffer_addwritepos(mRecvBuffer.get(), bytesTransferred);
+            if (brynet::base::buffer_getreadvalidcount(mRecvBuffer.get()) == brynet::base::buffer_getsize(mRecvBuffer.get()))
             {
                 growRecvBuffer();
             }
 
             if (mDataCB)
             {
-                const auto proclen = mDataCB(shared_from_this(), ox_buffer_getreadptr(mRecvBuffer.get()),
-                    ox_buffer_getreadvalidcount(mRecvBuffer.get()));
-                assert(proclen <= ox_buffer_getreadvalidcount(mRecvBuffer.get()));
-                if (proclen <= ox_buffer_getreadvalidcount(mRecvBuffer.get()))
+                const auto proclen = mDataCB(shared_from_this(), brynet::base::buffer_getreadptr(mRecvBuffer.get()),
+                    brynet::base::buffer_getreadvalidcount(mRecvBuffer.get()));
+                assert(proclen <= brynet::base::buffer_getreadvalidcount(mRecvBuffer.get()));
+                if (proclen <= brynet::base::buffer_getreadvalidcount(mRecvBuffer.get()))
                 {
-                    ox_buffer_addreadpos(mRecvBuffer.get(), proclen);
+                    brynet::base::buffer_addreadpos(mRecvBuffer.get(), proclen);
                 }
                 else
                 {
@@ -468,10 +468,10 @@ namespace bsio {
                 }
             }
 
-            if (ox_buffer_getwritevalidcount(mRecvBuffer.get()) == 0 
-                || ox_buffer_getreadvalidcount(mRecvBuffer.get()) == 0)
+            if (brynet::base::buffer_getwritevalidcount(mRecvBuffer.get()) == 0 
+                || brynet::base::buffer_getreadvalidcount(mRecvBuffer.get()) == 0)
             {
-                ox_buffer_adjustto_head(mRecvBuffer.get());
+                brynet::base::buffer_adjustto_head(mRecvBuffer.get());
             }
 
             doRecv();
@@ -535,19 +535,19 @@ namespace bsio {
         {
             if (mRecvBuffer == nullptr)
             {
-                mRecvBuffer.reset(ox_buffer_new(std::min<size_t>(16 * 1024, mMaxRecvBufferSize)));
+                mRecvBuffer.reset(brynet::base::buffer_new(std::min<size_t>(16 * 1024, mMaxRecvBufferSize)));
             }
             else
             {
-                const auto NewSize = ox_buffer_getsize(mRecvBuffer.get()) + 1024;
+                const auto NewSize = brynet::base::buffer_getsize(mRecvBuffer.get()) + 1024;
                 if (NewSize > mMaxRecvBufferSize)
                 {
                     return;
                 }
-                std::unique_ptr<struct buffer_s, BufferDeleter> newBuffer(ox_buffer_new(NewSize));
-                ox_buffer_write(newBuffer.get(),
-                    ox_buffer_getreadptr(mRecvBuffer.get()),
-                    ox_buffer_getreadvalidcount(mRecvBuffer.get()));
+                std::unique_ptr<struct brynet::base::buffer_s, BufferDeleter> newBuffer(brynet::base::buffer_new(NewSize));
+                brynet::base::buffer_write(newBuffer.get(),
+                    brynet::base::buffer_getreadptr(mRecvBuffer.get()),
+                    brynet::base::buffer_getreadvalidcount(mRecvBuffer.get()));
                 mRecvBuffer = std::move(newBuffer);
             }
         }
@@ -571,12 +571,12 @@ namespace bsio {
         DataCB                              mDataCB;
         struct BufferDeleter
         {
-            void operator()(struct buffer_s* ptr) const
+            void operator()(struct brynet::base::buffer_s* ptr) const
             {
-                ox_buffer_delete(ptr);
+                brynet::base::buffer_delete(ptr);
             }
         };
-        std::unique_ptr<struct buffer_s, BufferDeleter> mRecvBuffer;
+        std::unique_ptr<struct brynet::base::buffer_s, BufferDeleter> mRecvBuffer;
     };
 
 }
